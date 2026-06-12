@@ -251,15 +251,22 @@ export class License implements LicenseProvider {
 		this.logger.debug('License shut down');
 	}
 
+	private isDevLicenseBypass(): boolean {
+		return process.env.N8N_DEV_SKIP_LICENSE === 'true';
+	}
+
 	isLicensed(feature: BooleanLicenseFeature) {
+		if (this.isDevLicenseBypass()) return true;
 		return this.manager?.hasFeatureEnabled(feature) ?? false;
 	}
 
 	isCertValid(): boolean {
+		if (this.isDevLicenseBypass()) return true;
 		return this.manager?.isValid(false /* useLogger */) ?? false;
 	}
 
 	hasFeatureInCert(feature: BooleanLicenseFeature): boolean {
+		if (this.isDevLicenseBypass()) return true;
 		return this.manager?.hasFeatureEnabled(feature, false) ?? false;
 	}
 
@@ -383,6 +390,13 @@ export class License implements LicenseProvider {
 	}
 
 	getValue<T extends keyof FeatureReturnType>(feature: T): FeatureReturnType[T] {
+		if (this.isDevLicenseBypass()) {
+			if (feature === 'planName') return 'Enterprise' as FeatureReturnType[T];
+			if (String(feature).startsWith('quota:')) {
+				return UNLIMITED_LICENSE_QUOTA as FeatureReturnType[T];
+			}
+			return true as FeatureReturnType[T];
+		}
 		return this.manager?.getFeatureValue(feature) as FeatureReturnType[T];
 	}
 
@@ -453,6 +467,7 @@ export class License implements LicenseProvider {
 	}
 
 	getPlanName(): string {
+		if (this.isDevLicenseBypass()) return 'Enterprise';
 		return this.getValue('planName') ?? 'Community';
 	}
 

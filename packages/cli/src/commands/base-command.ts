@@ -304,6 +304,11 @@ export abstract class BaseCommand<F = never> {
 
 		Container.get(LicenseState).setLicenseProvider(this.license);
 
+		if (process.env.N8N_DEV_SKIP_LICENSE === 'true') {
+			this.logger.warn('N8N_DEV_SKIP_LICENSE is enabled — all enterprise features are unlocked');
+			return;
+		}
+
 		const { activationKey } = this.globalConfig.license;
 
 		if (activationKey) {
